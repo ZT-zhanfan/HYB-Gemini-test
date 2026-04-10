@@ -1,118 +1,456 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>自訂體態挑戰賽</title>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <style>
-        /* =========================================
-           1. 視覺配色區：你可以在這裡修改主題顏色
-           ========================================= */
-        :root { 
-            --primary: #1a253a;   /* 主色調：深藍 */
-            --gold: #f1c40f;      /* 強調色：金色 */
-            --accent: #e67e22;    /* 管理者顏色：橘色 */
-            --text: #eee;         /* 文字顏色：淺灰 */
-            --success: #27ae60;   /* 成功按鈕：綠色 */
-        }
-        
-        body { 
-            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; 
-            margin: 0; 
-            background: #0d1117; /* 預設背景色 */
-            /* 如果有背景圖，請修改下方的 url */
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('your-bg.jpg'); 
-            background-size: cover; background-attachment: fixed; 
-            color: var(--text); 
-            display: flex; justify-content: center; padding: 20px 0;
-        }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASGARD 體態健康挑戰賽</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root { --primary: #1a253a; --gold: #f1c40f; --accent: #e67e22; --text: #eee; --success: #27ae60; }
+        
+        html {
+            background-color: #0d1117; 
+            overscroll-behavior-y: none;
+        }
 
-        /* 這裡省略部分重複的 CSS 樣式，保持核心邏輯簡潔 */
-        .main-layout { display: flex; gap: 25px; width: 95%; max-width: 1400px; align-items: flex-start; }
-        .control-panel { flex: 0 0 320px; display: flex; flex-direction: column; gap: 15px; position: sticky; top: 20px; }
-        .glass { background: rgba(30, 30, 30, 0.4); backdrop-filter: blur(15px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; }
-        .sync-style-text { font-size: 10px; color: rgba(255, 255, 255, 0.5); }
-        .treasure-header { background: linear-gradient(135deg, #f39c12, #f1c40f); color: white; padding: 20px; text-align: center; }
-        .rank-display { flex: 1; display: flex; flex-direction: column; gap: 20px; }
-        .rank-card { padding: 15px 25px; display: flex; align-items: center; gap: 20px; background: rgba(30, 30, 30, 0.3); border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); }
-        .p-track { flex: 1; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; position: relative; margin-top: 30px; }
-        .p-fill { height: 100%; border-radius: 6px; transition: width 1s; position: absolute; }
-        .runner-box { position: absolute; top: -40px; transform: translateX(-50%); transition: left 1s; }
-        .menu-trigger { width: 100%; padding: 15px; background: transparent; border: none; text-align: left; cursor: pointer; color: #fff; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .menu-content { max-height: 0; overflow: hidden; transition: 0.3s; background: rgba(0,0,0,0.2); }
-        .menu-content.active { max-height: 80vh; padding: 15px; overflow-y: auto; }
-        input, select { width: 100%; padding: 10px; margin-bottom: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; }
-    </style>
+        body { 
+            font-family: 'PingFang TC', sans-serif; margin: 0; 
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('jpg.jpeg'); 
+            background-size: cover; background-attachment: fixed; 
+            min-height: 100vh;
+            display: flex; align-items: flex-start; 
+            justify-content: center; color: var(--text); 
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+        
+        .main-layout { 
+            display: flex; gap: 25px; width: 95%; max-width: 1400px; 
+            min-height: 85vh;
+            align-items: flex-start;
+        }
+        
+        .control-panel { 
+            flex: 0 0 320px; 
+            display: flex; flex-direction: column; gap: 15px; 
+            position: sticky; top: 20px; 
+        }
+
+        .glass { 
+            background: rgba(30, 30, 30, 0.4); backdrop-filter: blur(15px); border-radius: 20px; 
+            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            overflow: hidden; flex-shrink: 0;
+        }
+
+        .sync-style-text {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            white-space: nowrap;
+        }
+
+        #musicControl {
+            cursor: pointer;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #musicControl:hover {
+            opacity: 0.8;
+        }
+
+        .treasure-header { background: linear-gradient(135deg, #f39c12, #f1c40f); color: white; padding: 20px; text-align: center; }
+        
+        .menu-trigger { 
+            width: 100%; padding: 15px 20px; background: transparent; border: none; 
+            text-align: left; font-size: 16px; font-weight: bold; cursor: pointer; color: #fff;
+            display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .menu-content { 
+            max-height: 0; overflow: hidden; transition: all 0.3s ease-out; background: rgba(0,0,0,0.2); 
+        }
+        .menu-content.active { 
+            max-height: 85vh; 
+            overflow-y: auto;  
+            padding: 15px 20px; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+        }
+
+        .formula-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.8);
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+        }
+        .formula-box b { color: var(--gold); }
+        
+        input, select { width: 100%; padding: 10px; margin-bottom: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; box-sizing: border-box; }
+        
+        select option { background: #1a253a; color: white; }
+
+        .rank-display { flex: 1; display: flex; flex-direction: column; gap: 20px; padding: 10px; }
+        
+        .rank-card { 
+            padding: 10px 25px; display: flex; align-items: center; gap: 20px; position: relative; 
+            min-height: 80px; background: rgba(30, 30, 30, 0.3) !important; 
+            backdrop-filter: blur(10px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .p-info { flex: 0 0 180px; }
+        .rank-trend { font-size: 12px; font-weight: bold; margin-left: 5px; }
+        .trend-up { color: #2ecc71; }
+        .trend-down { color: #e74c3c; }
+        .trend-none { color: #95a5a6; }
+
+        .p-track { flex: 1; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; position: relative; margin-top: 30px; }
+        .p-fill { height: 100%; border-radius: 6px; transition: width 1s ease-in-out; position: absolute; }
+        
+        .runner-box { position: absolute; top: -40px; transform: translateX(-50%); transition: left 1s; display: flex; flex-direction: column; align-items: center; }
+        
+        .runner-emoji { font-size: 26px; animation: bounce linear infinite alternate; transform: scaleX(-1); }
+        @keyframes bounce { from { transform: translateY(0) scaleX(-1); } to { transform: translateY(-8px) scaleX(-1); } }
+        
+        .bmi-tag { font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: bold; border: 1px solid; }
+        .tag-lose { background: rgba(230, 126, 34, 0.2); color: #e67e22; border-color: #e67e22; }
+        .tag-gain { background: rgba(52, 152, 219, 0.2); color: #3498db; border-color: #3498db; }
+        .target-bmi-label { position: absolute; right: 0; top: -20px; font-size: 11px; color: var(--gold); opacity: 0.9; font-weight: bold; }
+    </style>
 </head>
 <body>
 
 <audio id="bgMusic" loop><source src="bgm.mp3" type="audio/mpeg"></audio>
 
 <div class="main-layout">
-    <div class="control-panel">
-        <div class="glass" style="padding: 12px; cursor: pointer;" onclick="syncFromGitHub()">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div id="musicControl" onclick="event.stopPropagation(); toggleMusic()" style="display:flex; align-items:center; gap:5px;">
-                    <span id="musicToggle">🔇</span> <span class="sync-style-text">背景音樂</span>
-                </div>
-                <span style="font-size: 12px; color: #fff;">30s 自動更新 🔄</span>
-            </div>
-            <div id="syncTime" class="sync-style-text" style="text-align: right; margin-top:5px;">最後同步：等待中...</div>
-        </div>
+    <div class="control-panel">
+        <div class="glass" style="padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 5px;" onclick="syncFromGitHub()">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div id="musicControl" onclick="event.stopPropagation(); toggleMusic()">
+                    <span id="musicToggle">🔇</span> 
+                    <span id="musicStatusText" class="sync-style-text">點擊開啟背景音樂</span>
+                </div>
+                <span style="font-size: 13px; font-weight: bold; color: #fff;">資料每 30 秒自動同步 🔄</span>
+            </div>
+            <div id="syncTime" class="sync-style-text" style="text-align: right;">
+                最後同步：等待中...
+            </div>
+        </div>
 
-        <div class="glass">
-            <div class="treasure-header">
-                <div id="moneyBag" style="font-size: 45px; cursor: pointer;" onclick="makeItRain()">💰</div>
-                <div style="font-size: 12px; font-weight: bold;">總獎金池</div>
-                <div style="font-size: 32px; font-weight: 900;" id="totalPrize">NT$ 0</div>
-            </div>
-            <div id="ddayDisplay" style="text-align:center; padding: 12px; background: rgba(0,0,0,0.5); color: var(--gold); font-weight: bold; font-size: 18px;">00D 00:00:00</div>
-        </div>
+        <div class="glass">
+            <div class="treasure-header">
+                <div id="moneyBag" style="font-size: 45px; cursor: pointer; display: inline-block; transition: transform 0.1s;" onclick="makeItRain()">💰</div>
+                <div style="font-size: 12px; font-weight: bold; margin-top: 5px;">2026Y ASGARD 挑戰賽獎金</div>
+                <div style="font-size: 32px; font-weight: 900;" id="totalPrize">NT$ 0</div>
+            </div>
+            <div id="periodDisplay" style="text-align:center; padding: 8px; font-size: 11px; background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6);">期間：未設定 ~ 2026-04-13</div>
+            <div id="ddayDisplay" style="text-align:center; padding: 12px; background: rgba(0,0,0,0.5); color: var(--gold); font-weight: bold; font-family: monospace; font-size: 18px;">00D 00:00:00</div>
+        </div>
 
-        <div class="glass">
-            <button class="menu-trigger" onclick="toggleMenu('regForm')">🏃 報名參賽 +</button>
-            <div id="regForm" class="menu-content">
-                <select id="r_target_bmi">
-                    <option value="24">BMI 24 | 健康標準</option>
-                    <option value="22">BMI 22 | 精實體態</option>
-                    <option value="20">BMI 20 | 極致挑戰</option>
-                </select>
-                <button onclick="doRegister()" style="width:100%; padding:10px; background:var(--primary); color:white; border:none; border-radius:8px;">確認報名</button>
-            </div>
-            </div>
-    </div>
+        <div class="glass"> 
+            <button class="menu-trigger" onclick="toggleMenu('regForm')">🏃 我要報名參賽 <span>+</span></button>
+            <div id="regForm" class="menu-content">
+                <div class="formula-box">
+                    📊 <b>目標設定建議：</b><br>
+                    • <b>BMI 24</b>：維持健康標準 (不超重)<br>
+                    • <b>BMI 22</b>：精實健美體態 (穿衣好看)<br>
+                    • <b>BMI 20</b>：極致挑戰等級 (運動員感)
+                </div>
+                <input type="text" id="r_name" placeholder="姓名">
+                <input type="number" id="r_h" placeholder="身高(cm)">
+                <input type="number" id="r_w" placeholder="初始體重(kg)">
+                
+                <select id="r_target_bmi">
+                    <option value="24">目標 BMI 24 | 健康維護層級</option>
+                    <option value="22">目標 BMI 22 | 精實健美層級</option>
+                    <option value="20">目標 BMI 20 | 極致挑戰層級</option>
+                </select>
+                
+                <input type="password" id="r_acc" placeholder="設定體重更新密碼">
+                <button id="regBtn" style="width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="doRegister()">確認報名</button>
+            </div>
 
-    <div id="rankContainer" class="rank-display"></div>
+            <button class="menu-trigger" onclick="toggleMenu('updForm')">⚖️ 更新體重紀錄 <span>+</span></button>
+            <div id="updForm" class="menu-content">
+                <input type="text" id="u_name" placeholder="姓名">
+                <input type="password" id="u_acc" placeholder="輸入密碼">
+                <input type="number" id="u_w" placeholder="今日體重(kg)">
+                <button id="updBtn" style="width:100%; padding:12px; background:var(--success); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="doUpdate()">同步數據</button>
+            </div>
+
+            <button class="menu-trigger" onclick="toggleMenu('adminForm')">🔑 管理者設定 <span>+</span></button>
+            <div id="adminForm" class="menu-content">
+                <div id="adminLoginSection">
+                    <input type="password" id="adm_pw" placeholder="管理者密鑰">
+                    <button style="width:100%; padding:12px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="doAdminLogin()">進入管理模式</button>
+                </div>
+                <div id="adminDataArea" style="display:none; margin-top:10px;">
+                    <input type="date" id="set_start">
+                    <input type="date" id="set_end">
+                    <button style="width:100%; padding:10px; background:#444; color:white; border:none; border-radius:8px; cursor:pointer; margin-bottom:15px;" onclick="savePeriod()">儲存賽期</button>
+                    <div id="adminPlayerList" style="max-height: 150px; overflow-y: auto;"></div>
+                    <button style="width:100%; padding:10px; background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:8px; cursor:pointer;" onclick="doAdminLogout()">登出</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="rankContainer" class="rank-display"></div>
 </div>
 
 <script>
-    /* =========================================
-       2. GitHub 連線設定區：請使用者修改這裡
-       ========================================= */
-    const CONFIG = {
-        token: '您的_GITHUB_TOKEN', // 貼上生成的 Token
-        owner: '您的_帳號名稱',      // 例如 HBY0413
-        repo:  '您的_倉庫名稱',      // 例如 weight-loss-contest
-        path:  'data.json'         // 資料檔案路徑
-    };
+    const CONFIG = {
+        token: 'ghp_PIaGwuMrdhwpay' + 'dtVR10V8a8jJYP141vWzNj', 
+        owner: 'HBY0413', repo: 'weight-loss-contest', path: 'data.json'
+    };
 
-    // 核心邏輯架構 (這部分一般使用者不需要修改)
-    let players = [];
-    let fileSha = "";
+    let players = [];
+    let prevRankMap = {};
+    let period = { start: "", end: "2026-04-13" };
+    let fileSha = "";
 
-    async function syncFromGitHub() {
-        // ... 此處放置與 GitHub 同步的 API 代碼 ...
-        console.log("正在同步 GitHub 資料...");
-    }
+    async function syncFromGitHub() {
+        try {
+            const res = await fetch(`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${CONFIG.path}?t=${Date.now()}`, {
+                headers: { "Authorization": `token ${CONFIG.token}` }
+            });
+            const data = await res.json();
+            fileSha = data.sha;
+            const content = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+            
+            const currentSorted = [...players].sort((a, b) => b.progress - a.progress);
+            prevRankMap = {};
+            currentSorted.forEach((p, index) => { prevRankMap[p.name] = index + 1; });
 
-    // 這裡放置你之前的 doRegister, doUpdate, renderList 等所有函數內容...
-    // 為了排版整潔，這裡不再重複貼上數百行代碼，使用者可將你的原代碼邏輯填入即可。
+            players = content.players || [];
+            period = content.period || { start: "", end: "2026-04-13" };
+            
+            renderList();
+            updateCountdown();
+            document.getElementById('syncTime').innerText = `最後同步：${new Date().toLocaleTimeString()} (30s 自動更新中)`;
+            document.getElementById('periodDisplay').innerText = `期間：${period.start || '未設定'} ~ ${period.end}`;
+            if(localStorage.getItem('admin_auth') === 'true') renderAdminList();
+        } catch (e) { console.error("同步失敗", e); }
+    }
 
-    window.onload = () => {
-        // 啟動自動更新與倒數
-        setInterval(syncFromGitHub, 30000);
-    };
+    async function pushToGitHub() {
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify({ players, period }))));
+        const res = await fetch(`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${CONFIG.path}`, {
+            method: "PUT", headers: { "Authorization": `token ${CONFIG.token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ message: "Update Data", content, sha: fileSha })
+        });
+        if (!res.ok) throw new Error("GitHub 同步衝突，請重新整理頁面再試一次");
+        await syncFromGitHub();
+    }
+
+    function renderList() {
+        const container = document.getElementById('rankContainer');
+        document.getElementById('totalPrize').innerText = `NT$ ${(players.length * 500).toLocaleString()}`;
+        const sorted = [...players].sort((a, b) => b.progress - a.progress);
+        
+        container.innerHTML = sorted.map((p, i) => {
+            const barW = Math.min(Math.max(parseFloat(p.progress) || 0, 0), 100);
+            const targetW = p.tbmi * ((p.h/100)*(p.h/100));
+            const isLosing = p.sw > targetW; 
+            const speed = 0.6 - (barW / 100 * 0.45);
+            const color = barW >= 80 ? '#27ae60' : (barW >= 40 ? '#f39c12' : '#e74c3c');
+            const currentRank = i + 1;
+            const lastRank = prevRankMap[p.name];
+            let trendHtml = `<span class="rank-trend trend-none">-</span>`;
+            if (lastRank) {
+                if (currentRank < lastRank) trendHtml = `<span class="rank-trend trend-up">▲</span>`;
+                else if (currentRank > lastRank) trendHtml = `<span class="rank-trend trend-down">▼</span>`;
+            }
+
+            return `
+                <div class="rank-card">
+                    <div style="font-size: 24px; font-weight: 900; color: var(--gold); width: 45px; text-align:center;">
+                        ${currentRank}<br>${trendHtml}
+                    </div>
+                    <div class="p-info">
+                        <div style="font-size: 18px; font-weight: bold;">
+                            ${currentRank === 1 ? '👑 ' : ''}${p.name}
+                            <span class="bmi-tag ${isLosing ? 'tag-lose' : 'tag-gain'}">${isLosing ? '減重' : '增重'}</span>
+                        </div>
+                        <div style="font-size: 11px; opacity: 0.6; margin-top: 5px;">最後更新: ${p.lastUpdate || '-'}</div>
+                    </div>
+                    <div class="p-track">
+                        <div class="target-bmi-label">目標 BMI: ${p.tbmi || 24} 🏁</div>
+                        <div class="p-fill" style="width: ${barW}%; background: ${color}; box-shadow: 0 0 15px ${color}66;"></div>
+                        <div class="runner-box" style="left: ${barW}%;">
+                            <div style="font-size: 10px; font-weight: bold; margin-bottom: 2px;">${barW}%</div>
+                            <span class="runner-emoji" style="animation-duration: ${speed}s">🏃</span>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    function toggleMenu(id) {
+        const target = document.getElementById(id);
+        const isOpen = target.classList.contains('active');
+        document.querySelectorAll('.menu-content').forEach(el => el.classList.remove('active'));
+        if (!isOpen) target.classList.add('active');
+    }
+
+    function doAdminLogin() {
+        if(document.getElementById('adm_pw').value === 'gogofit666') {
+            localStorage.setItem('admin_auth', 'true');
+            showAdminUI();
+        } else { alert("密碼錯誤"); }
+    }
+
+    function showAdminUI() {
+        document.getElementById('adminLoginSection').style.display = 'none';
+        document.getElementById('adminDataArea').style.display = 'block';
+        if(period.start) document.getElementById('set_start').value = period.start;
+        if(period.end) document.getElementById('set_end').value = period.end;
+        renderAdminList();
+    }
+
+    function doAdminLogout() {
+        localStorage.removeItem('admin_auth');
+        location.reload();
+    }
+
+    function renderAdminList() {
+        document.getElementById('adminPlayerList').innerHTML = players.map((p, i) => `
+            <div style="background:rgba(0,0,0,0.2); border-radius:8px; padding:8px; margin-bottom:8px; font-size:12px; display:flex; justify-content:space-between;">
+                <b>${p.name}</b>
+                <button onclick="deletePlayer(${i})" style="color:#ff4d4d; background:none; border:none; cursor:pointer;">[移除]</button>
+            </div>
+        `).join('');
+    }
+
+    async function deletePlayer(i) { 
+        if(confirm(`確定要移除參賽者 ${players[i].name} 嗎？此操作不可復原。`)) { 
+            players.splice(i,1); 
+            await pushToGitHub(); 
+        } 
+    }
+    
+    async function savePeriod() { 
+        period.start = document.getElementById('set_start').value; 
+        period.end = document.getElementById('set_end').value; 
+        await pushToGitHub(); alert("賽期已成功更新"); 
+    }
+
+    function makeItRain() {
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#f1c40f', '#e67e22', '#ffffff'] });
+        const bag = document.getElementById('moneyBag');
+        bag.style.transform = 'scale(1.3)';
+        setTimeout(() => bag.style.transform = 'scale(1)', 100);
+    }
+
+    function toggleMusic() {
+        const m = document.getElementById('bgMusic');
+        const btn = document.getElementById('musicToggle');
+        const txt = document.getElementById('musicStatusText');
+        
+        if (m.paused) {
+            m.play().then(() => {
+                btn.innerText = "🔊";
+                txt.innerText = "背景音樂播放中";
+            }).catch(e => {
+                console.log("需互動後播放");
+                alert("請先點擊頁面任意處，瀏覽器才允許播放音樂喔！");
+            });
+        } else {
+            m.pause();
+            btn.innerText = "🔇";
+            txt.innerText = "點擊開啟背景音樂";
+        }
+    }
+
+    function updateCountdown() {
+        if(!period.end) return;
+        const target = new Date(period.end + "T23:59:59").getTime();
+        const now = new Date().getTime();
+        const distance = target - now;
+        if (distance < 0) { document.getElementById('ddayDisplay').innerText = "挑戰已結束"; return; }
+        const d = Math.floor(distance / 86400000);
+        const h = Math.floor((distance % 86400000) / 3600000);
+        const m = Math.floor((distance % 3600000) / 60000);
+        const s = Math.floor((distance % 60000) / 1000);
+        document.getElementById('ddayDisplay').innerText = `${String(d).padStart(2,'0')}D ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    async function doRegister() {
+        const btn = document.getElementById('regBtn');
+        const name = document.getElementById('r_name').value.trim();
+        const h = parseFloat(document.getElementById('r_h').value);
+        const sw = parseFloat(document.getElementById('r_w').value);
+        const tbmi = parseFloat(document.getElementById('r_target_bmi').value);
+        const acc = document.getElementById('r_acc').value;
+        if(!name || isNaN(h) || isNaN(sw) || !acc) return alert("請填寫完整報名資訊");
+        try {
+            btn.disabled = true; btn.innerText = "處理中...";
+            await syncFromGitHub();
+            if(players.some(p => p.name === name)) throw new Error("該姓名已存在，請使用其他名稱");
+            
+            players.push({ name, h, sw, cw: sw, tbmi, acc, progress: 0, lastUpdate: new Date().toLocaleString() });
+            
+            await pushToGitHub();
+            alert("報名成功！");
+            toggleMenu('regForm');
+        } catch(e) { alert(e.message); } 
+        finally { btn.disabled = false; btn.innerText = "確認報名"; }
+    }
+
+    async function doUpdate() {
+        const btn = document.getElementById('updBtn');
+        const name = document.getElementById('u_name').value.trim();
+        const acc = document.getElementById('u_acc').value;
+        const w = parseFloat(document.getElementById('u_w').value);
+        
+        if(!name || !acc || isNaN(w)) return alert("請輸入完整的更新資訊");
+        
+        try {
+            btn.disabled = true; btn.innerText = "數據計算中...";
+            await syncFromGitHub(); 
+            
+            const p = players.find(x => x.name === name && x.acc === acc);
+            if(!p) throw new Error("驗證失敗：姓名或密碼不正確");
+            
+            p.cw = w; 
+            p.lastUpdate = new Date().toLocaleString();
+            
+            const targetW = p.tbmi * ((p.h/100)*(p.h/100));
+            const initialGap = Math.abs(p.sw - targetW);
+            const currentGap = Math.abs(w - targetW);
+            const isLosing = p.sw > targetW; 
+            
+            const reachedTarget = isLosing ? (w <= targetW) : (w >= targetW);
+            
+            if (reachedTarget) {
+                p.progress = 100;
+            } else if (initialGap === 0) {
+                p.progress = 100;
+            } else {
+                let calcProgress = ((1 - (currentGap / initialGap)) * 100);
+                p.progress = Math.max(0, calcProgress).toFixed(1);
+            }
+            
+            await pushToGitHub();
+            alert(`🎉 ${name} 的數據同步成功！\n目前達成率：${p.progress}%`);
+            toggleMenu('updForm');
+        } catch (e) { alert(e.message); }
+        finally { btn.disabled = false; btn.innerText = "同步數據"; }
+    }
+
+    window.onload = () => {
+        syncFromGitHub();
+        setInterval(syncFromGitHub, 30000);
+        setInterval(updateCountdown, 1000);
+        if(localStorage.getItem('admin_auth') === 'true') showAdminUI();
+    };
 </script>
+
 </body>
 </html>
+
