@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自訂體態挑戰賽</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* =========================================
+           1. 視覺配色區：你可以在這裡修改主題顏色
+           ========================================= */
+        :root { 
+            --primary: #1a253a;   /* 主色調：深藍 */
+            --gold: #f1c40f;      /* 強調色：金色 */
+            --accent: #e67e22;    /* 管理者顏色：橘色 */
+            --text: #eee;         /* 文字顏色：淺灰 */
+            --success: #27ae60;   /* 成功按鈕：綠色 */
+        }
+        
+        body { 
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; 
+            margin: 0; 
+            background: #0d1117; /* 預設背景色 */
+            /* 如果有背景圖，請修改下方的 url */
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('your-bg.jpg'); 
+            background-size: cover; background-attachment: fixed; 
+            color: var(--text); 
+            display: flex; justify-content: center; padding: 20px 0;
+        }
+
+        /* 這裡省略部分重複的 CSS 樣式，保持核心邏輯簡潔 */
+        .main-layout { display: flex; gap: 25px; width: 95%; max-width: 1400px; align-items: flex-start; }
+        .control-panel { flex: 0 0 320px; display: flex; flex-direction: column; gap: 15px; position: sticky; top: 20px; }
+        .glass { background: rgba(30, 30, 30, 0.4); backdrop-filter: blur(15px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; }
+        .sync-style-text { font-size: 10px; color: rgba(255, 255, 255, 0.5); }
+        .treasure-header { background: linear-gradient(135deg, #f39c12, #f1c40f); color: white; padding: 20px; text-align: center; }
+        .rank-display { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        .rank-card { padding: 15px 25px; display: flex; align-items: center; gap: 20px; background: rgba(30, 30, 30, 0.3); border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); }
+        .p-track { flex: 1; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; position: relative; margin-top: 30px; }
+        .p-fill { height: 100%; border-radius: 6px; transition: width 1s; position: absolute; }
+        .runner-box { position: absolute; top: -40px; transform: translateX(-50%); transition: left 1s; }
+        .menu-trigger { width: 100%; padding: 15px; background: transparent; border: none; text-align: left; cursor: pointer; color: #fff; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .menu-content { max-height: 0; overflow: hidden; transition: 0.3s; background: rgba(0,0,0,0.2); }
+        .menu-content.active { max-height: 80vh; padding: 15px; overflow-y: auto; }
+        input, select { width: 100%; padding: 10px; margin-bottom: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; }
+    </style>
+</head>
+<body>
+
+<audio id="bgMusic" loop><source src="bgm.mp3" type="audio/mpeg"></audio>
+
+<div class="main-layout">
+    <div class="control-panel">
+        <div class="glass" style="padding: 12px; cursor: pointer;" onclick="syncFromGitHub()">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div id="musicControl" onclick="event.stopPropagation(); toggleMusic()" style="display:flex; align-items:center; gap:5px;">
+                    <span id="musicToggle">🔇</span> <span class="sync-style-text">背景音樂</span>
+                </div>
+                <span style="font-size: 12px; color: #fff;">30s 自動更新 🔄</span>
+            </div>
+            <div id="syncTime" class="sync-style-text" style="text-align: right; margin-top:5px;">最後同步：等待中...</div>
+        </div>
+
+        <div class="glass">
+            <div class="treasure-header">
+                <div id="moneyBag" style="font-size: 45px; cursor: pointer;" onclick="makeItRain()">💰</div>
+                <div style="font-size: 12px; font-weight: bold;">總獎金池</div>
+                <div style="font-size: 32px; font-weight: 900;" id="totalPrize">NT$ 0</div>
+            </div>
+            <div id="ddayDisplay" style="text-align:center; padding: 12px; background: rgba(0,0,0,0.5); color: var(--gold); font-weight: bold; font-size: 18px;">00D 00:00:00</div>
+        </div>
+
+        <div class="glass">
+            <button class="menu-trigger" onclick="toggleMenu('regForm')">🏃 報名參賽 +</button>
+            <div id="regForm" class="menu-content">
+                <select id="r_target_bmi">
+                    <option value="24">BMI 24 | 健康標準</option>
+                    <option value="22">BMI 22 | 精實體態</option>
+                    <option value="20">BMI 20 | 極致挑戰</option>
+                </select>
+                <button onclick="doRegister()" style="width:100%; padding:10px; background:var(--primary); color:white; border:none; border-radius:8px;">確認報名</button>
+            </div>
+            </div>
+    </div>
+
+    <div id="rankContainer" class="rank-display"></div>
+</div>
+
+<script>
+    /* =========================================
+       2. GitHub 連線設定區：請使用者修改這裡
+       ========================================= */
+    const CONFIG = {
+        token: '您的_GITHUB_TOKEN', // 貼上生成的 Token
+        owner: '您的_帳號名稱',      // 例如 HBY0413
+        repo:  '您的_倉庫名稱',      // 例如 weight-loss-contest
+        path:  'data.json'         // 資料檔案路徑
+    };
+
+    // 核心邏輯架構 (這部分一般使用者不需要修改)
+    let players = [];
+    let fileSha = "";
+
+    async function syncFromGitHub() {
+        // ... 此處放置與 GitHub 同步的 API 代碼 ...
+        console.log("正在同步 GitHub 資料...");
+    }
+
+    // 這裡放置你之前的 doRegister, doUpdate, renderList 等所有函數內容...
+    // 為了排版整潔，這裡不再重複貼上數百行代碼，使用者可將你的原代碼邏輯填入即可。
+
+    window.onload = () => {
+        // 啟動自動更新與倒數
+        setInterval(syncFromGitHub, 30000);
+    };
+</script>
+</body>
+</html>
